@@ -1,42 +1,18 @@
 # Medical Image Augmentation and Synthesis
 
-## Overview
-
-This project focuses on generating synthetic medical images using Generative Adversarial Networks (GANs). The primary goal is to augment the dataset of brain tumor images to improve the performance of machine learning models for medical image analysis.
-
 ## Table of Contents
 
 - [Overview](#overview)
-- [Project Structure](#project-structure)
 - [Technologies Used](#technologies-used)
 - [Setup Instructions](#setup-instructions)
 - [Training the Model](#training-the-model)
 - [Using the GUI](#using-the-gui)
 - [Acknowledgements](#acknowledgements)
 
-## Project Structure
-medical_image_synthesis/
-│
-├── data/
-│ ├── brain_tumor/
-│ │ ├── Cancer (1).jpg
-│ │ ├── ...
-│ ├── non_brain_tumor/
-│ │ ├── Healthy (1).jpg
-│ │ ├── ...
-│
-├── models/
-│   ├── generator.py
-│   └── discriminator.py
-├── utils/
-│    ├── data_loader.py
-│    └── image_utils.py
-│
-├── data_preprocessing.py
-├── model_training.py
-├── gui_app.py
-├── requirements.txt
-└── README.md
+## Overview
+
+This project focuses on generating synthetic medical images using Generative Adversarial Networks (GANs). The primary goal is to augment the dataset of brain tumor images to improve the performance of machine learning models for medical image analysis.
+
 
 ## Technologies Used
 
