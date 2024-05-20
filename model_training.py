@@ -5,29 +5,34 @@ from keras import losses
 from models.generator import build_generator
 from models.discriminator import build_discriminator
 from utils.data_loader import load_data
+from fid import calculate_fid
+from inception_score import calculate_inception_score
+from data_agumentation import augment_images
+from visualization import plot_generated_images
 
-class GAN(tf.keras.Model):
+class ConditionalGAN(tf.keras.Model):
     def __init__(self, generator, discriminator):
-        super(GAN, self).__init__()
+        super(ConditionalGAN, self).__init__()
         self.generator = generator
         self.discriminator = discriminator
         self.cross_entropy = losses.BinaryCrossentropy(from_logits=False)
 
     def compile(self, generator_optimizer, discriminator_optimizer):
-        super(GAN, self).compile()
+        super(ConditionalGAN, self).compile()
         self.generator_optimizer = generator_optimizer
         self.discriminator_optimizer = discriminator_optimizer
 
     @tf.function
-    def train_step(self, real_images):
+    def train_step(self, data):
+        real_images, labels = data
         batch_size = tf.shape(real_images)[0]
         noise = tf.random.normal([batch_size, 100])
 
         with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
-            generated_images = self.generator(noise, training=True)
+            generated_images = self.generator([noise, labels], training=True)
 
-            real_output = self.discriminator(real_images, training=True)
-            fake_output = self.discriminator(generated_images, training=True)
+            real_output = self.discriminator([real_images, labels], training=True)
+            fake_output = self.discriminator([generated_images, labels], training=True)
 
             gen_loss = self.cross_entropy(tf.ones_like(fake_output), fake_output)
             real_loss = self.cross_entropy(tf.ones_like(real_output), real_output)
@@ -44,19 +49,34 @@ class GAN(tf.keras.Model):
 
 if __name__ == "__main__":
     # Load and preprocess data
-    brain_tumor_images, _ = load_data()  # Only use brain tumor images for training
+    images, labels = load_data()
+
+    # Apply augmentation
+    augmented_images = augment_images(images)
 
     # Initialize models
     generator = build_generator()
     discriminator = build_discriminator()
 
     # Compile GAN
-    gan = GAN(generator, discriminator)
-    generator_optimizer = optimizers.Adam(1e-4)
-    discriminator_optimizer = optimizers.Adam(1e-4)
+    gan = ConditionalGAN(generator, discriminator)
+    generator_optimizer = optimizers.Adam(1e-4, beta_1=0.5)
+    discriminator_optimizer = optimizers.Adam(1e-4, beta_1=0.5)
     gan.compile(generator_optimizer, discriminator_optimizer)
 
     # Train GAN
-    gan.fit(brain_tumor_images, epochs=50, batch_size=64)
+    epochs = 50
+    batch_size = 64
+    for epoch in range(epochs):
+        gan.fit((augmented_images, labels), epochs=1, batch_size=batch_size)
+        
+        # Plot generated images
+        plot_generated_images(generator, epoch)
+        
+        # Calculate and print FID and IS
+        if epoch % 10 == 0 or epoch == epochs - 1:
+            fid = calculate_fid(images, generator(tf.random.normal([len(images), 100]), training=False))
+            inception_score = calculate_inception_score(generator(tf.random.normal([len(images), 100]), training=False))
+            print(f'Epoch {epoch}: FID = {fid}, IS = {inception_score}')
     
     generator.save_weights('generator_w.weights.h5')
